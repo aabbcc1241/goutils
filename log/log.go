@@ -16,8 +16,9 @@ var (
   Error *log.Logger
 )
 
-func Init(infoVerbose bool, debugVerbose bool, errorVerbose bool) {
-  commFlag := log.Ldate | log.Ltime | log.Lshortfile
+const DefaultCommFlag = log.Ldate | log.Ltime | log.Lshortfile
+
+func Init(infoVerbose bool, debugVerbose bool, errorVerbose bool, commFlag int) {
   var infoLog io.Writer
   var debugLog io.Writer
   var errorLog io.Writer
@@ -42,5 +43,5 @@ func Init(infoVerbose bool, debugVerbose bool, errorVerbose bool) {
 }
 
 func init() {
-  Init(true, true, true)
+  Init(true, true, true, DefaultCommFlag)
 }
