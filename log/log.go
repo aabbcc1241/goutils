@@ -17,6 +17,7 @@ var (
 )
 
 const DefaultCommFlag = log.Ldate | log.Ltime | log.Lshortfile
+const ShortCommFlag = log.Ltime | log.Lshortfile
 
 func Init(infoVerbose bool, debugVerbose bool, errorVerbose bool, commFlag int) {
   var infoLog io.Writer
