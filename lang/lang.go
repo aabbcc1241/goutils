@@ -2,12 +2,14 @@ package lang
 
 import (
   "fmt"
+  "github.com/aabbcc1241/goutils/log"
   "reflect"
   "strconv"
 )
 
 /* reference http://stackoverflow.com/questions/26744873/converting-map-to-struct/26746461#26746461 (stackoverflow/dave) */
 func SetField(obj interface{}, name string, value interface{}) error {
+  //log.Debug.Println("name",name,"value",value)
   structValue := reflect.ValueOf(obj).Elem()
   structFieldValue := structValue.FieldByName(name)
 
@@ -23,7 +25,8 @@ func SetField(obj interface{}, name string, value interface{}) error {
   val := reflect.ValueOf(value)
   valType := val.Type()
   if structFieldType != valType {
-    if val.Kind() == reflect.Float64 {
+    switch val.Kind() {
+    case reflect.Float64:
       switch structFieldValue.Kind() {
       case reflect.Int:
         i, err := strconv.Atoi(fmt.Sprintf("%0.f", value))
@@ -31,20 +34,40 @@ func SetField(obj interface{}, name string, value interface{}) error {
           structFieldValue.Set(reflect.ValueOf(i))
           return nil
         }
+        break
+      case reflect.Int64:
+        i, err := strconv.ParseInt(fmt.Sprintf("%0.f", value), 10, 64)
+        if err == nil {
+          structFieldValue.Set(reflect.ValueOf(i))
+          return nil
+        }
+        break
+      case reflect.Uint64:
+        i, err := strconv.ParseUint(fmt.Sprintf("%0.f", value), 10, 64)
+        if err == nil {
+          structFieldValue.Set(reflect.ValueOf(i))
+          return nil
+        }
+        break
+      }
+      break
+    case reflect.String:
+      log.Debug.Println("struct type kind", structFieldType.Kind())
+      switch structFieldValue.Kind() {
       }
     }
-    return fmt.Errorf("Provided value type didn't match obj field type, structType:%v, valueType:%v", structFieldType, val.Type())
+    return fmt.Errorf("Provided value type didn't match obj field type, name:%v, value:%v, structType:%v, valueType:%v", name, value, structFieldType, val.Type())
   } else {
     structFieldValue.Set(val)
     return nil
   }
 }
 
-type GenericStruct struct{}
+type demo_s struct{}
 
 /* reference http://stackoverflow.com/questions/26744873/converting-map-to-struct/26746461#26746461 (stackoverflow/dave) */
 /* demo function to use SetField from interface (e.g. from json.Decoder) */
-func (s *GenericStruct) FillStruct(i interface{}) error {
+func (s *demo_s) FillStruct(i interface{}) error {
   m := i.(map[string]interface{})
   for k, v := range m {
     if err := SetField(s, k, v); err != nil {
