@@ -4,45 +4,45 @@
 package log
 
 import (
-  "io"
-  "io/ioutil"
-  "log"
-  "os"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
 )
 
 var (
-  Info  *log.Logger
-  Debug *log.Logger
-  Error *log.Logger
+	Info  *log.Logger
+	Debug *log.Logger
+	Error *log.Logger
 )
 
 const DefaultCommFlag = log.Ldate | log.Ltime | log.Lshortfile
 const ShortCommFlag = log.Ltime | log.Lshortfile
 
 func Init(infoVerbose bool, debugVerbose bool, errorVerbose bool, commFlag int) {
-  var infoLog io.Writer
-  var debugLog io.Writer
-  var errorLog io.Writer
-  if infoVerbose {
-    infoLog = os.Stdout
-  } else {
-    infoLog = ioutil.Discard
-  }
-  if debugVerbose {
-    debugLog = os.Stdout
-  } else {
-    debugLog = ioutil.Discard
-  }
-  if errorVerbose {
-    errorLog = os.Stderr
-  } else {
-    errorLog = ioutil.Discard
-  }
-  Info = log.New(infoLog, "Info: ", commFlag)
-  Debug = log.New(debugLog, "Debug: ", commFlag)
-  Error = log.New(errorLog, "Error: ", commFlag)
+	var infoLog io.Writer
+	var debugLog io.Writer
+	var errorLog io.Writer
+	if infoVerbose {
+		infoLog = os.Stdout
+	} else {
+		infoLog = ioutil.Discard
+	}
+	if debugVerbose {
+		debugLog = os.Stdout
+	} else {
+		debugLog = ioutil.Discard
+	}
+	if errorVerbose {
+		errorLog = os.Stderr
+	} else {
+		errorLog = ioutil.Discard
+	}
+	Info = log.New(infoLog, "Info: ", commFlag)
+	Debug = log.New(debugLog, "Debug: ", commFlag)
+	Error = log.New(errorLog, "Error: ", commFlag)
 }
 
 func init() {
-  Init(true, true, true, DefaultCommFlag)
+	Init(true, true, true, DefaultCommFlag)
 }
