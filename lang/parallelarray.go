@@ -1,3 +1,5 @@
+/* Usage : copy and replace the Data type with desired one */
+
 package lang
 
 import (
@@ -7,15 +9,18 @@ import (
 )
 
 type ParallelArray struct {
-	Data    []interface{}
+	Data    []Empty
 	Lock    sync.Mutex
 	NThread int
 }
 type consumer interface {
-	Apply(k int, v interface{}, r *rand.Rand)
+	Apply(k int, v Empty, r *rand.Rand)
 }
 type producer interface {
-	Apply(k int, v interface{}, r *rand.Rand) interface{}
+	Apply(k int, v Empty, r *rand.Rand) Empty
+}
+type inplace_updater interface {
+	Apply(k int, v *Empty, r *rand.Rand)
 }
 
 func (p ParallelArray) Len() int {
@@ -33,6 +38,7 @@ func _for(p ParallelArray, f consumer, withRandom bool, start, end int) {
 	}
 	if N < n {
 		sem := make(Semaphore, N)
+		sem.P(N)
 		for ; start < end; start++ {
 			go func(i int) {
 				var r *rand.Rand
@@ -47,6 +53,7 @@ func _for(p ParallelArray, f consumer, withRandom bool, start, end int) {
 	} else {
 		s := N / n
 		sem := make(Semaphore, n)
+		sem.P(n)
 		for i := 0; i < n; i++ {
 			go func(i int) {
 				var r *rand.Rand
@@ -65,7 +72,7 @@ func _for(p ParallelArray, f consumer, withRandom bool, start, end int) {
 		}
 	}
 }
-func _update(p *ParallelArray, f producer, withRandom bool, start, end int) {
+func _replace(p *ParallelArray, f producer, withRandom bool, start, end int) {
 	N := end - start
 	n := runtime.GOMAXPROCS(0)
 	if p.NThread > 0 {
@@ -73,6 +80,7 @@ func _update(p *ParallelArray, f producer, withRandom bool, start, end int) {
 	}
 	if N < n {
 		sem := make(Semaphore, N)
+		sem.P(N)
 		for ; start < end; start++ {
 			go func(i int) {
 				var r *rand.Rand
@@ -87,6 +95,7 @@ func _update(p *ParallelArray, f producer, withRandom bool, start, end int) {
 	} else {
 		s := N / n
 		sem := make(Semaphore, n)
+		sem.P(n)
 		for i := 0; i < n; i++ {
 			go func(i int) {
 				var r *rand.Rand
@@ -101,7 +110,49 @@ func _update(p *ParallelArray, f producer, withRandom bool, start, end int) {
 		}
 		sem.Wait(n)
 		if n*s != N {
-			_update(p, f, withRandom, n*s+start, end)
+			_replace(p, f, withRandom, n*s+start, end)
+		}
+	}
+}
+func _inplace_update(p *ParallelArray, f inplace_updater, withRandom bool, start, end int) {
+	N := end - start
+	n := runtime.GOMAXPROCS(0)
+	if p.NThread > 0 {
+		n = p.NThread
+	}
+	if N < n {
+		sem := make(Semaphore, N)
+		sem.P(N)
+		for ; start < end; start++ {
+			go func(i int) {
+				var r *rand.Rand
+				if withRandom {
+					r = rand.New(rand.NewSource(int64(i)))
+				}
+				f.Apply(i, &p.Data[i], r)
+				sem.Signal()
+			}(start)
+		}
+		sem.Wait(N)
+	} else {
+		s := N / n
+		sem := make(Semaphore, n)
+		sem.P(n)
+		for i := 0; i < n; i++ {
+			go func(i int) {
+				var r *rand.Rand
+				if withRandom {
+					r = rand.New(rand.NewSource(int64(i)))
+				}
+				for j := i*s + start; j < (i+1)*s+start; j++ {
+					f.Apply(j, &p.Data[j], r)
+				}
+				sem.Signal()
+			}(i)
+		}
+		sem.Wait(n)
+		if n*s != N {
+			_inplace_update(p, f, withRandom, n*s+start, end)
 		}
 	}
 }
@@ -111,10 +162,15 @@ func (p ParallelArray) For(f consumer, withRandom bool) {
 	p.Lock.Unlock()
 }
 
-/* in-place map and replace */
-func (p *ParallelArray) Update(f producer, withRandom bool) {
+func (p *ParallelArray) Replace(f producer, withRandom bool) {
 	p.Lock.Lock()
-	_update(p, f, withRandom, 0, len(p.Data))
+	_replace(p, f, withRandom, 0, len(p.Data))
+	p.Lock.Unlock()
+}
+
+func (p *ParallelArray) Inplace_Update(f inplace_updater, withRandom bool) {
+	p.Lock.Lock()
+	_inplace_update(p, f, withRandom, 0, len(p.Data))
 	p.Lock.Unlock()
 }
 
