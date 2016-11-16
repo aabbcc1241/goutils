@@ -1,7 +1,7 @@
 package test
 
 import (
-	. "github.com/aabbcc1241/goutils/lang"
+	. "github.com/beenotung/goutils/lang"
 	"math/rand"
 	"testing"
 	"time"

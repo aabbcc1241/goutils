@@ -2,7 +2,7 @@ package lang
 
 import (
 	"fmt"
-	"github.com/aabbcc1241/goutils/log"
+	"github.com/beenotung/goutils/log"
 	"reflect"
 	"strconv"
 )
